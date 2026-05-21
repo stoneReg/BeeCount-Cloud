@@ -40,7 +40,7 @@ from ...models import (
 )
 from ...security import SCOPE_APP_WRITE, SCOPE_WEB_WRITE
 from ...services.ai.image_cache import consume_image
-from ...snapshot_mutator import create_transaction
+from ...snapshot_mutator import create_tag, create_transaction
 from ._shared import (
     _TRANSACTION_WRITE_ROLES,
     _WRITE_RESPONSES,
@@ -194,7 +194,45 @@ async def create_tx_batch(
         if isinstance(arr, list):
             prev_snapshot[_k] = [dict(e) if isinstance(e, dict) else e for e in arr]
 
-    # 4. 循环 mutate snapshot,创建 N 笔
+    # 4. Ensure 所有用到的 tag 名字都在 snapshot.tags 里有实体,得到 name→sync_id map。
+    #
+    # 历史问题:_resolve_or_make_ai_tag_name 名字误导 — 它只 "resolve or pick a
+    # default *name*",**不创建实体**。extra_tag_name(图片/文字记账)更直接,
+    # 字符串 append 完就完事。导致 batch 创建的 tx 上看得到 chip,但 Tags 管理
+    # 页里这俩 tag 不存在 → tag_sync_ids_json 也填不上,Tags 详情查不到关联 tx。
+    #
+    # 这里改成跟 mobile 行为对齐:发现 snapshot.tags 里没这个名字 → 用
+    # snapshot_mutator.create_tag 实际建实体,后续 _emit_entity_diffs 会把它
+    # emit 成 SyncChange + 写 UserTagProjection。tx payload 直接引用 sync_id。
+    tag_name_to_sync_id: dict[str, str] = {}
+    existing_tags = snapshot.get("tags") or []
+    for t in existing_tags:
+        n = (t.get("name") or "").strip()
+        if n:
+            tag_name_to_sync_id.setdefault(n, str(t.get("syncId") or ""))
+
+    needed_names: set[str] = {n for n in auto_tag_names if n}
+    for _item in req.transactions:
+        if _item.tags:
+            needed_names.update(t for t in _item.tags if t)
+
+    for name in needed_names:
+        if name in tag_name_to_sync_id and tag_name_to_sync_id[name]:
+            continue
+        tag_payload = _payload_with_actor({"name": name}, current_user)
+        try:
+            snapshot, new_sync_id = create_tag(snapshot, tag_payload)
+            tag_name_to_sync_id[name] = new_sync_id
+        except ValueError:
+            # create_tag 内部 dup name 会 raise,理论上前面已 dedup 不会到这。
+            # 防御性重扫 snapshot 找同名 sync_id,实在没有就放弃(让 tx 带
+            # name-only 落库,跟历史行为兼容)。
+            for t in snapshot.get("tags") or []:
+                if (t.get("name") or "").strip() == name:
+                    tag_name_to_sync_id[name] = str(t.get("syncId") or "")
+                    break
+
+    # 5. 循环 mutate snapshot,创建 N 笔
     created_sync_ids: list[str] = []
     try:
         for i, item in enumerate(req.transactions):
@@ -203,6 +241,7 @@ async def create_tx_batch(
                 auto_tag_names=auto_tag_names,
                 attachment_dict=attachment_dict,
                 actor_user=current_user,
+                tag_name_to_sync_id=tag_name_to_sync_id,
             )
             snapshot, sync_id = create_transaction(snapshot, tx_payload)
             if sync_id:
@@ -316,9 +355,15 @@ def _build_tx_payload(
     auto_tag_names: list[str],
     attachment_dict: dict | None,
     actor_user: User,
+    tag_name_to_sync_id: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """把 BatchTransactionItem + 自动 tag + 共享 attachment 拼成 single create
-    所需的 payload(对应 WriteTransactionCreateRequest schema)。"""
+    所需的 payload(对应 WriteTransactionCreateRequest schema)。
+
+    `tag_name_to_sync_id`(可选):name → sync_id map,batch 路径预先 lookup
+    传进来,让 payload 同时带 tags(名字)+ tag_ids(sync_id),projection 写入
+    时 tag_sync_ids_json 才完整。
+    """
     payload: dict[str, Any] = {
         "tx_type": item.tx_type,
         "amount": item.amount,
@@ -339,6 +384,16 @@ def _build_tx_payload(
     merged_tags = user_tags + [t for t in auto_tag_names if t and t not in user_tags]
     if merged_tags:
         payload["tags"] = merged_tags
+        # 反查 sync_id 一起传 — 让 projection.tag_sync_ids_json 完整填充。
+        # 否则 tag rename 走 sync_id 路径会漏掉这笔 tx(issue #5 根因)。
+        # 找不到 sync_id 的 name 静默丢弃,不阻塞 tx 创建(可能是 LLM 抽出的
+        # 全新 tag 名字,稍后 snapshot 同步 emit 时会创建 tag 实体)。
+        if tag_name_to_sync_id:
+            tag_ids = [
+                tag_name_to_sync_id[n] for n in merged_tags if n in tag_name_to_sync_id
+            ]
+            if tag_ids:
+                payload["tag_ids"] = tag_ids
 
     if attachment_dict is not None:
         payload["attachments"] = [attachment_dict]
