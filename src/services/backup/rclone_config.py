@@ -280,7 +280,14 @@ class RcloneConfigManager:
                 # 老 DB 可能留着 password / password2 历史字段,跳过
                 if k in {"password", "password2"}:
                     continue
-                parser[section][k] = v
+                # 对 pass 字段调用 rclone obscure 加密（WebDAV/SFTP/FTP backend需要）
+                if k == "pass" and r.backend_type in {"webdav", "sftp", "ftp"}:
+                    try:
+                        parser[section][k] = obscure_password(v, rclone_binary=self.rclone_binary)
+                    except Exception:
+                        parser[section][k] = v
+                else:
+                    parser[section][k] = v
 
             # 回写迁移过的 secrets
             if cleaned_secrets:
