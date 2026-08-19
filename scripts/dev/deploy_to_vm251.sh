@@ -40,7 +40,12 @@ ssh "$VM" "sudo sed -i 's|^    image: .*|    image: ${TAG}|' ${STACK}/compose.ya
 ssh "$VM" "cd ${STACK} && sudo docker compose up -d"
 
 echo "==> 健康检查 ..."
-sleep 5
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  if ssh "$VM" "curl -fsS http://127.0.0.1:8869/healthz >/dev/null 2>&1"; then
+    break
+  fi
+  sleep 3
+done
 ssh "$VM" "curl -fsS http://127.0.0.1:8869/healthz && echo && docker exec beecloud-beecount-cloud-1 alembic current && docker exec beecloud-beecount-cloud-1 cat /app/VERSION"
 
 echo "==> 部署完成"
