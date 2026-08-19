@@ -95,6 +95,99 @@ def diff_transaction_payloads(
     return changes
 
 
+# UI 展示时若已有 *_Name / tags,则隐藏对应 Id 字段,避免重复。
+_DISPLAY_SKIP_IF_PRESENT: dict[str, str] = {
+    "categoryId": "categoryName",
+    "accountId": "accountName",
+    "fromAccountId": "fromAccountName",
+    "toAccountId": "toAccountName",
+    "tagIds": "tags",
+}
+
+_DISPLAY_FIELD_ORDER: list[str] = list(FIELD_LABELS.keys())
+
+# 新增/删除记录 UI 摘要字段(避免展示 excludeFromStats 等技术项)
+SUMMARY_DISPLAY_FIELDS: tuple[str, ...] = (
+    "type",
+    "amount",
+    "categoryName",
+    "accountName",
+    "fromAccountName",
+    "toAccountName",
+    "happenedAt",
+    "note",
+    "tags",
+)
+
+
+def filter_changes_for_display(changes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """去掉 Id/Name 重复项,并按产品字段顺序排序。"""
+    fields = {c.get("field") for c in changes if isinstance(c, dict)}
+    filtered = [
+        c
+        for c in changes
+        if isinstance(c, dict)
+        and _DISPLAY_SKIP_IF_PRESENT.get(str(c.get("field", "")), "") not in fields
+    ]
+    order_index = {name: idx for idx, name in enumerate(_DISPLAY_FIELD_ORDER)}
+
+    def _sort_key(item: dict[str, Any]) -> tuple[int, str]:
+        field = str(item.get("field", ""))
+        return (order_index.get(field, len(_DISPLAY_FIELD_ORDER)), field)
+
+    return sorted(filtered, key=_sort_key)
+
+
+def snapshot_to_display_changes(
+    snapshot: dict[str, Any] | None,
+    *,
+    action: str,
+) -> list[dict[str, Any]]:
+    """从交易快照生成 UI 展示行(create 展示 to, delete 展示 from)。"""
+    data = snapshot or {}
+    changes: list[dict[str, Any]] = []
+    for key in SUMMARY_DISPLAY_FIELDS:
+        if key not in data:
+            continue
+        value = data.get(key)
+        if _normalize(value) is None:
+            continue
+        label = FIELD_LABELS.get(key, key)
+        if action == "create":
+            changes.append({"field": key, "label": label, "from": None, "to": value})
+        elif action == "delete":
+            changes.append({"field": key, "label": label, "from": value, "to": None})
+    return filter_changes_for_display(changes)
+
+
+def _summarize_changes(changes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    summary = [c for c in changes if str(c.get("field", "")) in SUMMARY_DISPLAY_FIELDS]
+    return summary if summary else changes
+
+
+def resolve_display_changes(
+    *,
+    action: str,
+    field_diff: list[dict[str, Any]] | None,
+    payload: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """合并 field_diff 与 payload 快照,保证删除/新增记录有可读摘要。"""
+    raw = [c for c in (field_diff or []) if isinstance(c, dict)]
+    filtered = filter_changes_for_display(raw)
+    if filtered:
+        if action in ("create", "delete"):
+            return _summarize_changes(filtered)
+        return filtered
+
+    snapshot = payload or {}
+    if action in ("create", "delete") and snapshot:
+        from_snapshot = snapshot_to_display_changes(snapshot, action=action)
+        if from_snapshot:
+            return from_snapshot
+
+    return []
+
+
 def infer_audit_action(
     *,
     sync_action: str,

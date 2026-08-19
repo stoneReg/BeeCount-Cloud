@@ -4,54 +4,94 @@ import {
   fetchTransactionHistory,
   type TransactionAuditEntry,
 } from '@beecount/api-client'
-import { Button, useT } from '@beecount/ui'
+import { Button, cn, useT } from '@beecount/ui'
 import { History, Loader2 } from 'lucide-react'
 
-function formatWhen(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString('zh-CN', { hour12: false })
-  } catch {
-    return iso
-  }
-}
+import {
+  buildAuditChangeLines,
+  formatAuditAttribution,
+  formatAuditWhen,
+  getAuditActionMeta,
+} from './auditDisplay'
 
-function actionLabel(action: string): string {
-  if (action === 'create') return '创建'
-  if (action === 'delete') return '删除'
-  return '修改'
-}
+function AuditEntryCard({
+  entry,
+  showLedger = false,
+}: {
+  entry: TransactionAuditEntry
+  showLedger?: boolean
+}) {
+  const meta = getAuditActionMeta(entry.action)
+  const Icon = meta.icon
+  const changes = buildAuditChangeLines(entry)
 
-function actorLine(entry: TransactionAuditEntry): string {
-  const parts: string[] = []
-  if (entry.device_name) parts.push(entry.device_name)
-  else if (entry.updated_by_device_id) parts.push(entry.updated_by_device_id.slice(0, 8))
-  if (entry.user_display_name) parts.push(entry.user_display_name)
-  else if (entry.user_email) parts.push(entry.user_email)
-  return parts.join(' · ') || '—'
-}
-
-function ChangeList({ entry }: { entry: TransactionAuditEntry }) {
-  if (entry.action === 'create') {
-    const amount = entry.payload.amount
-    const note = entry.payload.note as string | undefined
-    return (
-      <div className="text-xs text-muted-foreground">
-        {typeof amount === 'number' ? `金额 ${amount}` : null}
-        {note ? ` · ${note}` : null}
-      </div>
-    )
-  }
-  if (entry.changes.length === 0) {
-    return <div className="text-xs text-muted-foreground">—</div>
-  }
   return (
-    <ul className="space-y-0.5 text-xs text-muted-foreground">
-      {entry.changes.map((c) => (
-        <li key={c.field}>
-          {c.label}: {String(c.from_value ?? '—')} → {String(c.to_value ?? '—')}
-        </li>
-      ))}
-    </ul>
+    <div className={cn('rounded-xl border px-4 py-3 transition-colors', meta.cardClass)}>
+      <div className="flex gap-3">
+        <div
+          className={cn(
+            'mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
+            meta.iconWrapClass,
+          )}
+        >
+          <Icon className={cn('h-4 w-4', meta.iconClass)} />
+        </div>
+
+        <div className="min-w-0 flex-1 space-y-2.5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                类型
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    'inline-flex rounded-md px-2 py-0.5 text-xs font-semibold',
+                    meta.badgeClass,
+                  )}
+                >
+                  {meta.label}
+                </span>
+                {showLedger && entry.ledger_name ? (
+                  <span className="text-xs text-muted-foreground">{entry.ledger_name}</span>
+                ) : null}
+              </div>
+            </div>
+            <time className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+              {formatAuditWhen(entry.updated_at)}
+            </time>
+          </div>
+
+          <div>
+            <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              归属
+            </div>
+            <div className="mt-0.5 text-sm text-foreground/90">{formatAuditAttribution(entry)}</div>
+          </div>
+
+          {changes.length > 0 ? (
+            <div>
+              <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                修改内容
+              </div>
+              <ul className="mt-1.5 space-y-1">
+                {changes.map((line) => (
+                  <li
+                    key={`${entry.id}-${line.label}-${line.text}`}
+                    className="flex gap-2 text-sm leading-snug"
+                  >
+                    <span className="shrink-0 text-muted-foreground">{line.label}：</span>
+                    <span className="min-w-0 break-all text-foreground/90">{line.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : meta.kind === 'delete' ? (
+            <div className="text-sm text-muted-foreground">（历史删除记录未留存账单详情）</div>
+          ) : null}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -116,16 +156,7 @@ export function TransactionAuditTimeline({
   return (
     <div className="space-y-3">
       {items.map((entry) => (
-        <div key={entry.id} className="rounded-lg border border-border/60 bg-muted/10 px-3 py-2">
-          <div className="flex items-center justify-between gap-2 text-xs">
-            <span className="font-medium text-foreground">{actionLabel(entry.action)}</span>
-            <span className="text-muted-foreground">{formatWhen(entry.updated_at)}</span>
-          </div>
-          <div className="mt-1 text-[11px] text-muted-foreground">{actorLine(entry)}</div>
-          <div className="mt-2">
-            <ChangeList entry={entry} />
-          </div>
-        </div>
+        <AuditEntryCard key={entry.id} entry={entry} />
       ))}
       {hasMore ? (
         <Button variant="ghost" size="sm" disabled={loading} onClick={() => void load(true)}>
@@ -167,7 +198,7 @@ export function AuditRecentPanel({ token, ledgerId }: { token: string; ledgerId?
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center gap-2 text-sm font-medium">
         <History className="h-4 w-4" />
         修改记录
@@ -175,18 +206,11 @@ export function AuditRecentPanel({ token, ledgerId }: { token: string; ledgerId?
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">暂无记录</p>
       ) : (
-        items.map((entry) => (
-          <div key={entry.id} className="rounded-lg border border-border/60 px-3 py-2 text-sm">
-            <div className="flex justify-between gap-2 text-xs text-muted-foreground">
-              <span>
-                {entry.ledger_name || entry.ledger_id} · {actionLabel(entry.action)}
-              </span>
-              <span>{formatWhen(entry.updated_at)}</span>
-            </div>
-            <div className="mt-1 text-[11px] text-muted-foreground">{actorLine(entry)}</div>
-            <ChangeList entry={entry} />
-          </div>
-        ))
+        <div className="space-y-3">
+          {items.map((entry) => (
+            <AuditEntryCard key={entry.id} entry={entry} showLedger />
+          ))}
+        </div>
       )}
     </div>
   )

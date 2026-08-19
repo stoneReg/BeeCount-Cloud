@@ -1,7 +1,7 @@
 import { AuditRecentPanel } from '../../components/audit/TransactionAuditPanel'
 import { useAuth } from '../../context/AuthContext'
 
-/** 云端修改记录总览(设置内入口,非首页)。 */
+/** 云端修改记录总览(首页 + 设置 · 健康页均可进入)。 */
 export function SettingsAuditPage() {
   const { token } = useAuth()
   if (!token) return null

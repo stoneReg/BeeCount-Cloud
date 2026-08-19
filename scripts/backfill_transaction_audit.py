@@ -75,7 +75,7 @@ def backfill(db: Session, *, batch_commit: int = 500) -> tuple[int, int]:
             updated_by_device_id=ch.updated_by_device_id,
             updated_by_user_id=ch.updated_by_user_id,
             field_diff_json=field_diff,
-            payload_json=after if after is not None else (before or {}),
+            payload_json=before if ch.action == "delete" else (after if after is not None else (before or {})),
         )
         db.add(row)
         inserted += 1

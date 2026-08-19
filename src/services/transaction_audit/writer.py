@@ -70,6 +70,16 @@ def record_transaction_audit_for_sync_change(
     if action == "update" and not field_diff:
         return None
 
+    if sync_action == "delete":
+        # delete push 的 payload 通常只有 actor 字段;快照必须用删除前 projection。
+        stored_payload = dict(before or {})
+        if payload:
+            for key in ("createdByUserId", "updatedByUserId"):
+                if key in payload:
+                    stored_payload[key] = payload[key]
+    else:
+        stored_payload = payload if payload is not None else (before or {})
+
     row = TransactionAuditLog(
         change_id=change.change_id,
         ledger_id=ledger_id,
@@ -79,7 +89,7 @@ def record_transaction_audit_for_sync_change(
         updated_by_device_id=change.updated_by_device_id,
         updated_by_user_id=change.updated_by_user_id,
         field_diff_json=field_diff,
-        payload_json=payload if payload is not None else (before or {}),
+        payload_json=stored_payload,
     )
     db.add(row)
     logger.debug(

@@ -493,6 +493,9 @@ export function AdminUsersPanel({
             <div className="space-y-1">
               <Label>{t('admin.users.table.email')}</Label>
               <Input
+                type="email"
+                autoComplete="off"
+                placeholder="user@example.com"
                 value={createEmail}
                 onChange={(event) => onCreateEmailChange(event.target.value)}
               />
@@ -501,6 +504,8 @@ export function AdminUsersPanel({
               <Label>{t('login.password')}</Label>
               <Input
                 type="password"
+                autoComplete="new-password"
+                minLength={6}
                 value={createPassword}
                 onChange={(event) => onCreatePasswordChange(event.target.value)}
               />

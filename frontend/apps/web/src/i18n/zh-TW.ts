@@ -1418,6 +1418,7 @@ const zhTW = {
   'admin.users.password.error.tooShort': '新密碼至少 6 位',
   'admin.users.password.error.mismatch': '兩次輸入的新密碼不一致',
   'admin.users.error.createRequired': '請填寫信箱與密碼。',
+  'admin.users.error.invalidEmail': '信箱格式無效,需包含 @ 且網域含 .(如 user@example.com)。',
   'admin.users.filter.enabled': '僅啟用',
   'admin.users.filter.disabled': '僅停用',
   'admin.users.filter.all': '全部狀態',
@@ -1478,6 +1479,7 @@ const zhTW = {
   'error.WRITE_VALIDATION_FAILED': '寫入驗證失敗，請檢查輸入。',
   'error.USER_EMAIL_EXISTS': '此信箱已存在。',
   'error.USER_PASSWORD_TOO_SHORT': '密碼至少需 6 碼。',
+  'error.VALIDATION_ERROR': '請求參數校驗失敗,請檢查信箱格式與密碼長度(至少 6 位)。',
 
   'notice.userCreated': '使用者已建立。',
 

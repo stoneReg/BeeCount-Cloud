@@ -1460,6 +1460,7 @@ const zhCN = {
   'admin.users.password.error.tooShort': '新密码至少 6 位',
   'admin.users.password.error.mismatch': '两次输入的新密码不一致',
   'admin.users.error.createRequired': '请填写邮箱和密码。',
+  'admin.users.error.invalidEmail': '邮箱格式无效,需包含 @ 且域名含 .(如 user@example.com)。',
   'admin.users.filter.enabled': '仅启用',
   'admin.users.filter.disabled': '仅禁用',
   'admin.users.filter.all': '全部状态',
@@ -1518,6 +1519,7 @@ const zhCN = {
   'error.WRITE_VALIDATION_FAILED': '写入校验失败，请检查输入。',
   'error.USER_EMAIL_EXISTS': '该邮箱已存在。',
   'error.USER_PASSWORD_TOO_SHORT': '密码至少需要 6 位。',
+  'error.VALIDATION_ERROR': '请求参数校验失败,请检查邮箱格式与密码长度(至少 6 位)。',
   'error.ADMIN_USER_DELETE_SELF_FORBIDDEN': '不能删除当前登录管理员。',
   'error.ADMIN_USER_DELETE_LAST_ADMIN_FORBIDDEN': '不能删除最后一个启用的管理员。',
 

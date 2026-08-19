@@ -9,12 +9,13 @@ from sqlalchemy.orm import Session
 
 from ...deps import get_current_user
 from ...ledger_access import list_accessible_ledgers
-from ...models import Device, Ledger, TransactionAuditLog, User
+from ...models import Device, Ledger, TransactionAuditLog, User, UserProfile
 from ...schemas import (
     TransactionAuditEntryOut,
     TransactionAuditFieldChangeOut,
     TransactionAuditPageOut,
 )
+from ...services.transaction_audit.diff import resolve_display_changes
 from ._shared import (
     _READ_SCOPE_DEP,
     _is_admin,
@@ -34,6 +35,12 @@ def _audit_row_to_out(
     user_display_name: str | None,
     user_email: str | None,
 ) -> TransactionAuditEntryOut:
+    raw_changes = [c for c in (row.field_diff_json or []) if isinstance(c, dict)]
+    display_changes = resolve_display_changes(
+        action=row.action,
+        field_diff=raw_changes,
+        payload=row.payload_json if isinstance(row.payload_json, dict) else {},
+    )
     changes = [
         TransactionAuditFieldChangeOut(
             field=c.get("field", ""),
@@ -41,8 +48,7 @@ def _audit_row_to_out(
             from_value=c.get("from"),
             to_value=c.get("to"),
         )
-        for c in (row.field_diff_json or [])
-        if isinstance(c, dict)
+        for c in display_changes
     ]
     return TransactionAuditEntryOut(
         id=row.id,
@@ -75,7 +81,9 @@ def _load_user_info(db: Session, user_ids: set[str]) -> dict[str, tuple[str | No
     if not user_ids:
         return {}
     rows = db.execute(
-        select(User.id, User.display_name, User.email).where(User.id.in_(user_ids))
+        select(User.id, User.email, UserProfile.display_name)
+        .join(UserProfile, UserProfile.user_id == User.id, isouter=True)
+        .where(User.id.in_(user_ids))
     ).all()
     return {r.id: (r.display_name, r.email) for r in rows}
 

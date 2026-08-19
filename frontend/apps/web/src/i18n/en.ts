@@ -1419,6 +1419,7 @@ const en = {
   'admin.users.password.error.tooShort': 'New password must be at least 6 characters',
   'admin.users.password.error.mismatch': 'The two new passwords do not match',
   'admin.users.error.createRequired': 'Email and password are required.',
+  'admin.users.error.invalidEmail': 'Invalid email: must include @ and a dot in the domain (e.g. user@example.com).',
   'admin.users.filter.enabled': 'Enabled only',
   'admin.users.filter.disabled': 'Disabled only',
   'admin.users.filter.all': 'All statuses',
@@ -1479,6 +1480,7 @@ const en = {
   'error.WRITE_VALIDATION_FAILED': 'Write validation failed. Please check input values.',
   'error.USER_EMAIL_EXISTS': 'Email already exists.',
   'error.USER_PASSWORD_TOO_SHORT': 'Password must be at least 6 characters.',
+  'error.VALIDATION_ERROR': 'Request validation failed. Check email format and password length (min 6).',
 
   'notice.userCreated': 'User created.',
 
