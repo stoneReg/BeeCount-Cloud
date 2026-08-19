@@ -49,6 +49,6 @@ done
 ssh "$VM" "curl -fsS http://127.0.0.1:8869/healthz && echo && docker exec beecloud-beecount-cloud-1 alembic current && docker exec beecloud-beecount-cloud-1 cat /app/VERSION"
 
 echo "==> 回填 transaction_audit_log (幂等) ..."
-ssh "$VM" "docker exec beecloud-beecount-cloud-1 python /app/scripts/backfill_transaction_audit.py"
+ssh "$VM" "docker exec beecloud-beecount-cloud-1 sh -c 'PYTHONPATH=/app python /app/scripts/backfill_transaction_audit.py'"
 
 echo "==> 部署完成"
