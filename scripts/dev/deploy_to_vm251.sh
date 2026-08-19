@@ -48,4 +48,7 @@ for i in 1 2 3 4 5 6 7 8 9 10; do
 done
 ssh "$VM" "curl -fsS http://127.0.0.1:8869/healthz && echo && docker exec beecloud-beecount-cloud-1 alembic current && docker exec beecloud-beecount-cloud-1 cat /app/VERSION"
 
+echo "==> 回填 transaction_audit_log (幂等) ..."
+ssh "$VM" "docker exec beecloud-beecount-cloud-1 python /app/scripts/backfill_transaction_audit.py"
+
 echo "==> 部署完成"

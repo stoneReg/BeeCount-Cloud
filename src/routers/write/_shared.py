@@ -90,6 +90,12 @@ from ...snapshot_mutator import (
 
 logger = logging.getLogger(__name__)
 
+
+def _record_tx_audit(db: Session, *, ledger_id: str, change_row: SyncChange) -> None:
+    from ...services.transaction_audit import record_transaction_audit_for_sync_change
+
+    record_transaction_audit_for_sync_change(db, ledger_id=ledger_id, change=change_row)
+
 # router instance lives in each sub-module (ledgers.py / transactions.py / ...).
 # _shared.py is helper-only, no routes.
 settings = get_settings()
@@ -287,6 +293,8 @@ def _diff_entity_list(
             db.add(change_row)
             db.flush()
             emitted_ids.append(change_row.change_id)
+            if entity_type == "transaction" and not is_user_global:
+                _record_tx_audit(db, ledger_id=ledger.id, change_row=change_row)
             if is_user_global:
                 fn = _USER_PROJECTION_UPSERTERS.get(entity_type)
                 if fn is not None:
@@ -327,6 +335,8 @@ def _diff_entity_list(
             db.add(change_row)
             db.flush()
             emitted_ids.append(change_row.change_id)
+            if entity_type == "transaction" and not is_user_global:
+                _record_tx_audit(db, ledger_id=ledger.id, change_row=change_row)
             if is_user_global:
                 fn = _USER_PROJECTION_DELETERS.get(entity_type)
                 if fn is not None:
@@ -576,6 +586,7 @@ async def _commit_create_tx_fast(
         )
         db.add(change_row)
         db.flush()
+        _record_tx_audit(db, ledger_id=ledger.id, change_row=change_row)
         projection.upsert_tx(
             db,
             ledger_id=ledger.id,
@@ -726,6 +737,7 @@ async def _commit_write_fast_tx(
             )
             db.add(change_row)
             db.flush()
+            _record_tx_audit(db, ledger_id=ledger.id, change_row=change_row)
             projection.delete_tx(db, ledger_id=ledger.id, sync_id=tx_id)
             projection.gc_orphan_attachments(
                 db, user_id=ledger.user_id, file_ids=tx_file_ids,
@@ -751,6 +763,7 @@ async def _commit_write_fast_tx(
             )
             db.add(change_row)
             db.flush()
+            _record_tx_audit(db, ledger_id=ledger.id, change_row=change_row)
             projection.upsert_tx(
                 db,
                 ledger_id=ledger.id,

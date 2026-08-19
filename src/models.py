@@ -451,6 +451,49 @@ class AuditLog(Base):
     )
 
 
+class TransactionAuditLog(Base):
+    """交易修改审计 — 独立于 sync_changes,不参与 compact。"""
+
+    __tablename__ = "transaction_audit_log"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
+    change_id: Mapped[int | None] = mapped_column(
+        BigInteger().with_variant(Integer(), "sqlite"),
+        unique=True,
+        nullable=True,
+        index=True,
+    )
+    ledger_id: Mapped[str] = mapped_column(
+        ForeignKey("ledgers.id", ondelete="CASCADE"), index=True
+    )
+    entity_sync_id: Mapped[str] = mapped_column(String(255), index=True)
+    action: Mapped[str] = mapped_column(String(16), index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    updated_by_device_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    updated_by_user_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, index=True
+    )
+    field_diff_json: Mapped[list] = mapped_column(JSON, default=list)
+    payload_json: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+Index(
+    "idx_tx_audit_ledger_entity_id",
+    TransactionAuditLog.ledger_id,
+    TransactionAuditLog.entity_sync_id,
+    TransactionAuditLog.id,
+)
+Index(
+    "idx_tx_audit_ledger_updated",
+    TransactionAuditLog.ledger_id,
+    TransactionAuditLog.updated_at.desc(),
+)
+
+
 # ============================================================================
 # Read projection tables (CQRS Q-side)
 # ============================================================================

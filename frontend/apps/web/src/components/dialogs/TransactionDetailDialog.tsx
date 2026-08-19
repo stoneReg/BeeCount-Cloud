@@ -11,8 +11,10 @@ import {
   useT,
 } from '@beecount/ui'
 import { buildTagColorMap, TagChip } from '@beecount/web-features'
-import { Calendar, ChevronLeft, ChevronRight, Edit3, Hash, ImageOff, Tag, User, Wallet, X } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Edit3, Hash, History, ImageOff, Tag, User, Wallet, X } from 'lucide-react'
 
+import { useAuth } from '../../context/AuthContext'
+import { TransactionAuditTimeline } from '../audit/TransactionAuditPanel'
 import { useAttachmentCache } from '../../context/AttachmentCacheContext'
 
 interface Props {
@@ -44,6 +46,7 @@ export function TransactionDetailDialog({
   onEdit,
 }: Props) {
   const t = useT()
+  const { token } = useAuth()
 
   // tag name(lowercased)→ color 字典,跟 TransactionRow 用同样模式
   const tagColorByName = useMemo(() => buildTagColorMap(tags), [tags])
@@ -191,6 +194,20 @@ export function TransactionDetailDialog({
                     />
                   }
                 />
+              ) : null}
+              {token && tx.ledger_id ? (
+                <div className="py-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <History className="h-3.5 w-3.5" />
+                    修改记录
+                  </div>
+                  <TransactionAuditTimeline
+                    token={token}
+                    ledgerId={tx.ledger_id}
+                    syncId={tx.id}
+                    compact
+                  />
+                </div>
               ) : null}
             </div>
           </div>

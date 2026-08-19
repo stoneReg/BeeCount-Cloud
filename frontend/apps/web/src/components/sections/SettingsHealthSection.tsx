@@ -25,6 +25,7 @@ import {
 import { formatIsoDateTime } from '@beecount/web-features'
 
 import { useAuth } from '../../context/AuthContext'
+import { SettingsAuditLink } from './SettingsAuditLink'
 
 interface Props {
   adminHealth: AdminHealth | null
@@ -162,6 +163,8 @@ export function SettingsHealthSection({
           </CardContent>
         </Card>
       ) : null}
+
+      <SettingsAuditLink />
 
     </div>
   )

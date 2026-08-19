@@ -18,6 +18,7 @@ import type {
   WorkspaceLedgerCounts,
   WorkspaceTag,
   WorkspaceTransaction,
+  TransactionAuditPage,
   WorkspaceTransactionPage
 } from './types'
 
@@ -421,4 +422,32 @@ function parseFilenameFromDisposition(value: string): string | null {
   }
   const plain = /filename\s*=\s*"?([^";]+)"?/i.exec(value)
   return plain ? plain[1].trim() : null
+}
+
+export async function fetchTransactionHistory(
+  token: string,
+  ledgerId: string,
+  syncId: string,
+  options?: { limit?: number; beforeId?: number },
+): Promise<TransactionAuditPage> {
+  const query = new URLSearchParams()
+  if (options?.limit) query.set('limit', `${options.limit}`)
+  if (options?.beforeId) query.set('before_id', `${options.beforeId}`)
+  const suffix = query.toString() ? `?${query.toString()}` : ''
+  return authedGet<TransactionAuditPage>(
+    `/read/ledgers/${encodeURIComponent(ledgerId)}/transactions/${encodeURIComponent(syncId)}/history${suffix}`,
+    token,
+  )
+}
+
+export async function fetchAuditRecent(
+  token: string,
+  options?: { ledgerId?: string; limit?: number; beforeId?: number },
+): Promise<TransactionAuditPage> {
+  const query = new URLSearchParams()
+  if (options?.ledgerId) query.set('ledger_id', options.ledgerId)
+  if (options?.limit) query.set('limit', `${options.limit}`)
+  if (options?.beforeId) query.set('before_id', `${options.beforeId}`)
+  const suffix = query.toString() ? `?${query.toString()}` : ''
+  return authedGet<TransactionAuditPage>(`/read/audit/recent${suffix}`, token)
 }
