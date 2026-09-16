@@ -1851,6 +1851,8 @@ const zhCN = {
   "accounts.positiveAssets": "正余额资产",
   "accounts.negativeAssets": "账户负余额 {value} 已从总资产扣减。",
   'accounts.error.currencyLocked': "已有交易的账户无法修改币种。",
+  'admin.users.error.invalidEmail': '邮箱格式无效,需包含 @ 且域名含 .(如 user@example.com)。',
+  'error.VALIDATION_ERROR': '请求参数校验失败,请检查邮箱格式与密码长度(至少 6 位)。',
 } as const
 
 export default zhCN

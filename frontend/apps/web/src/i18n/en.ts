@@ -1813,6 +1813,8 @@ const en = {
   "accounts.positiveAssets": "Positive asset balances",
   "accounts.negativeAssets": "Negative account balances {value} are deducted from total assets.",
   'accounts.error.currencyLocked': "An account with transactions cannot change currency.",
+  'admin.users.error.invalidEmail': 'Invalid email: must include @ and a dot in the domain (e.g. user@example.com).',
+  'error.VALIDATION_ERROR': 'Request validation failed. Check email format and password length (min 6).',
 } as const
 
 export default en
