@@ -113,13 +113,23 @@ export function AdminUsersPage() {
   }
 
   const onCreate = async () => {
-    if (!createEmail.trim() || !createPassword.trim()) {
+    const email = createEmail.trim().toLowerCase()
+    if (!email || !createPassword.trim()) {
       toast.error(t('admin.users.error.createRequired'), t('notice.error'))
+      return false
+    }
+    const domain = email.split('@')[1] || ''
+    if (!email.includes('@') || !domain.includes('.')) {
+      toast.error(t('admin.users.error.invalidEmail'), t('notice.error'))
+      return false
+    }
+    if (createPassword.length < 6) {
+      toast.error(t('admin.users.password.error.tooShort'), t('notice.error'))
       return false
     }
     try {
       await createAdminUser(token, {
-        email: createEmail.trim(),
+        email,
         password: createPassword,
         is_admin: createIsAdmin,
         is_enabled: createIsEnabled,
