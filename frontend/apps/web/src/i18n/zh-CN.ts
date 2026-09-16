@@ -1790,6 +1790,8 @@ const zhCN = {
   'accounts.needBaseCurrency.title': '设置主币种以查看资产汇总',
   'accounts.needBaseCurrency.desc': '账户涉及多种币种,需先设置主币种,才能把各币种折算成同一口径汇总。',
   'accounts.needBaseCurrency.action': '去设置主币种',
+  'admin.users.error.invalidEmail': '邮箱格式无效,需包含 @ 且域名含 .(如 user@example.com)。',
+  'error.VALIDATION_ERROR': '请求参数校验失败,请检查邮箱格式与密码长度(至少 6 位)。',
 } as const
 
 export default zhCN

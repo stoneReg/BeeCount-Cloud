@@ -84,6 +84,14 @@ export type AIConfig = {
   strategy?: string
   bill_extraction_enabled?: boolean
   use_vision?: boolean
+  /** mobile-only：语音触发方式 auto | hold_to_talk */
+  voice_trigger_mode?: string
+  /** mobile-only：自动检测静音阈值（毫秒） */
+  voice_silence_timeout_ms?: number
+  /** mobile-only：语音识别模式 transcription | multimodal_chat */
+  audio_mode?: string
+  /** mobile-only：深度思考档位 off | low | medium | high */
+  ai_reasoning_level?: string
 }
 
 /** 内置「智谱GLM」provider id —— 跟 mobile `zhipuDefault.id` 对齐,删除 fallback 用。 */
@@ -210,6 +218,36 @@ export type ReadTransaction = {
   last_edited_by_display_name?: string | null
   last_edited_by_avatar_url?: string | null
   last_edited_by_avatar_version?: number | null
+}
+
+export type TransactionAuditFieldChange = {
+  field: string
+  label: string
+  from_value: unknown
+  to_value: unknown
+}
+
+export type TransactionAuditEntry = {
+  id: number
+  change_id: number | null
+  ledger_id: string
+  ledger_name: string | null
+  entity_sync_id: string
+  action: string
+  updated_at: string
+  updated_by_device_id: string | null
+  device_name: string | null
+  updated_by_user_id: string | null
+  user_display_name: string | null
+  user_email: string | null
+  changes: TransactionAuditFieldChange[]
+  payload: Record<string, unknown>
+}
+
+export type TransactionAuditPage = {
+  items: TransactionAuditEntry[]
+  has_more: boolean
+  next_before_id: number | null
 }
 
 export type ReadAccount = {
