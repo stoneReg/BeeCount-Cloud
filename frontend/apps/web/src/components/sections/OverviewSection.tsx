@@ -17,6 +17,7 @@ import {
 } from '../../lib/txDialogEvents'
 import { HomeHero } from '../dashboard/HomeHero'
 import { HomeHabitStats } from '../dashboard/HomeHabitStats'
+import { HomeAuditPreview } from '../audit/HomeAuditPreview'
 import { HomeYearHeatmap } from '../dashboard/HomeYearHeatmap'
 import { HomeMonthCategoryDonut } from '../dashboard/HomeMonthCategoryDonut'
 import { HomeTopTags } from '../dashboard/HomeTopTags'
@@ -109,6 +110,8 @@ export function OverviewSection({
         ledgerCounts={ledgerCounts || undefined}
         currency={currency}
       />
+
+      <HomeAuditPreview />
 
       {/* 扩展分析:Web 端独有的加强仪表,不属于 mobile 首页对标范围 */}
       <div className="flex items-center gap-2 pt-2">

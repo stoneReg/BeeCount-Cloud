@@ -27,6 +27,7 @@ import {
 import { formatIsoDateTime, formatIsoDateTimeLocal } from '@beecount/web-features'
 
 import { useAuth } from '../../context/AuthContext'
+import { SettingsAuditLink } from './SettingsAuditLink'
 import { getRagLatestState, shouldShowRagUpdate } from '../../lib/ragStatus'
 
 interface Props {
@@ -219,6 +220,7 @@ export function SettingsHealthSection({
         </Card>
       ) : null}
 
+      <SettingsAuditLink />
     </div>
   )
 }
