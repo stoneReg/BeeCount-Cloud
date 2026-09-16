@@ -299,6 +299,14 @@ async def push_changes(
             )
             db.add(row_change)
             db.flush()
+            if change.entity_type == "transaction":
+                from ...services.transaction_audit import (
+                    record_transaction_audit_for_sync_change,
+                )
+
+                record_transaction_audit_for_sync_change(
+                    db, ledger_id=ledger.id, change=row_change
+                )
             # 方案 B:projection 随 push 同事务刷新。不再写 ledger_snapshot 行。
             if change.entity_type in INDIVIDUAL_ENTITY_TYPES:
                 # lock 一次/账本,避免两个 push 并发走同个 ledger 的 cascade
