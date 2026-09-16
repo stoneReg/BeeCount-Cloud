@@ -56,6 +56,9 @@ const SettingsPatsPage = lazy(() =>
 const SettingsHealthPage = lazy(() =>
   import('./pages/sections/SettingsHealthPage').then((m) => ({ default: m.SettingsHealthPage })),
 )
+const SettingsAuditPage = lazy(() =>
+  import('./pages/sections/SettingsAuditPage').then((m) => ({ default: m.SettingsAuditPage })),
+)
 const SettingsProfilePage = lazy(() =>
   import('./pages/sections/SettingsProfilePage').then((m) => ({ default: m.SettingsProfilePage })),
 )
@@ -321,6 +324,14 @@ function AppRoutes() {
           element={
             <Suspense fallback={<RouteFallback />}>
               <SettingsHealthPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="settings/audit"
+          element={
+            <Suspense fallback={<RouteFallback />}>
+              <SettingsAuditPage />
             </Suspense>
           }
         />

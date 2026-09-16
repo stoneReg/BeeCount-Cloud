@@ -1085,6 +1085,41 @@ class BackupRunListOut(BaseModel):
 
 
 # ============================================================================
+# Transaction audit (修改记录)
+# ============================================================================
+
+
+class TransactionAuditFieldChangeOut(BaseModel):
+    field: str
+    label: str
+    from_value: Any | None = None
+    to_value: Any | None = None
+
+
+class TransactionAuditEntryOut(BaseModel):
+    id: int
+    change_id: int | None = None
+    ledger_id: str
+    ledger_name: str | None = None
+    entity_sync_id: str
+    action: str
+    updated_at: datetime
+    updated_by_device_id: str | None = None
+    device_name: str | None = None
+    updated_by_user_id: str | None = None
+    user_display_name: str | None = None
+    user_email: str | None = None
+    changes: list[TransactionAuditFieldChangeOut] = Field(default_factory=list)
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class TransactionAuditPageOut(BaseModel):
+    items: list[TransactionAuditEntryOut]
+    has_more: bool = False
+    next_before_id: int | None = None
+
+
+# ============================================================================
 # Restore schemas (PR3 用)
 # ============================================================================
 
