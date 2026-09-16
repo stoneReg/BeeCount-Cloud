@@ -1752,6 +1752,8 @@ const en = {
   'accounts.needBaseCurrency.title': 'Set a primary currency to see your asset summary',
   'accounts.needBaseCurrency.desc': 'Your accounts span multiple currencies. Set a primary currency to convert them into one summary.',
   'accounts.needBaseCurrency.action': 'Set primary currency',
+  'admin.users.error.invalidEmail': 'Invalid email: must include @ and a dot in the domain (e.g. user@example.com).',
+  'error.VALIDATION_ERROR': 'Request validation failed. Check email format and password length (min 6).',
 } as const
 
 export default en
